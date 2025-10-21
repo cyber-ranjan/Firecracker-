@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Combined Fireworks</title>
+  <style>
+    /* CSS here */
+    body {
+      margin: 0;
+      overflow: hidden;
+      background: radial-gradient(ellipse at bottom, #020111 0%, #000 100%);
+    }
+    canvas {
+      display: block;
+    }
+  </style>
+</head>
+<body>
+  <canvas id="fireworks"></canvas>
+  <audio id="explosion-sound" src="explosion.mp3"></audio>
+
+  <script>
+    // JavaScript here
+    const canvas = document.getElementById("fireworks");
+    const ctx = canvas.getContext("2d");
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+
+    let fireworks = [];
+    const explosionSound = document.getElementById("explosion-sound");
+
+    function random(min, max) {
+      return Math.random() * (max - min) + min;
+    }
+
+    class Particle {
+      constructor(x, y, color, velocityX, velocityY, alpha) {
+        this.x = x;
+        this.y = y;
+        this.color = color;
+        this.velocityX = velocityX;
+        this.velocityY = velocityY;
+        this.alpha = alpha;
+        this.trail = [];
+        this.trailLength = 10;
+      }
+
+      update() {
+        this.trail.push({ x: this.x, y: this.y });
+        if (this.trail.length > this.trailLength) this.trail.shift();
+        this.x += this.velocityX;
+        this.y += this.velocityY;
+        this.velocityY += 0.02; // gravity
+        this.alpha -= 0.01;
+      }
+
+      draw() {
+        // Draw trail
+        ctx.save();
+        ctx.globalAlpha = this.alpha * 0.4;
+        ctx.strokeStyle = this.color;
+        ctx.beginPath();
+        if (this.trail.length > 1) {
+          ctx.moveTo(this.trail[0].x, this.trail[0].y);
+          for (let i = 1; i < this.trail.length; i++) {
+            ctx.lineTo(this.trail[i].x, this.trail[i].y);
+          }
+        }
+        ctx.stroke();
+        ctx.restore();
+
+        // Draw particle head
+        ctx.globalAlpha = this.alpha;
+        ctx.fillStyle = this.color;
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, 3, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+
+    function createFirework(x, y) {
+      const colors = ['#ff0040', '#ff8000', '#ffff00', '#00ff00', '#00ffff', '#0040ff', '#bf00ff'];
+
+      explosionSound.currentTime = 0;
+      explosionSound.play();
+
+      for (let i = 0; i < 100; i++) {
+        let color = colors[Math.floor(Math.random() * colors.length)];
+        let velocityX = random(-3, 3);
+        let velocityY = random(-3, 3);
+        fireworks.push(new Particle(x, y, color, velocityX, velocityY, 1));
+      }
+    }
+
+    function animate() {
+      ctx.fillStyle = "rgba(0, 0, 0, 0.2)";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      fireworks.forEach((particle, index) => {
+        particle.update();
+        particle.draw();
+        if (particle.alpha <= 0) {
+          fireworks.splice(index, 1);
+        }
+      });
+
+      requestAnimationFrame(animate);
+    }
+
+    canvas.addEventListener("click", (e) => {
+      createFirework(e.clientX, e.clientY);
+    });
+
+    animate();
+
+    window.addEventListener("resize", () => {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    });
+  </script>
+</body>
+</html>
